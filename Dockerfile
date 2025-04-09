@@ -1,16 +1,18 @@
-FROM gradle:8.13
-
 WORKDIR /app
 
-COPY /app .
+COPY app/gradle gradle
+COPY app/build.gradle.kts .
+COPY app/settings.gradle.kts .
+COPY app/gradlew .
 
-RUN gradle installDist
+RUN ./gradlew --no-daemon dependencies
 
-COPY /app/build/libs/app-1.0-SNAPSHOT-all.jar /app.jar
+COPY app/src src
+COPY app/config config
 
-# This is the port that your javalin application will listen on
+RUN ./gradlew --no-daemon build
+
+ENV JAVA_OPTS "-Xmx512M -Xms512M"
 EXPOSE 7070
 
-ENTRYPOINT ["java", "-jar", "/app.jar"]
-
-# CMD java -jar ./build/libs/app-1.0-SNAPSHOT-all.jar
+CMD java -jar build/libs/app-1.0-SNAPSHOT-all.jar
