@@ -64,8 +64,15 @@ public class App {
         String db = System.getenv().getOrDefault("JDBC_DATABASE_URL", "Fuck!");
         if (db.startsWith("jdbc:postgresql")) {
             var conn = DriverManager.getConnection("jdbc:h2:mem:project");
-            var sql = "CREATE TABLE users (id BIGINT PRIMARY KEY AUTO_INCREMENT, " +
-                    "username VARCHAR(255), phone VARCHAR(255))";
+            var sql = """
+            DROP TABLE IF EXISTS urls
+
+            CREATE TABLE urls (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    name VARCHAR(255) NOT NULL,
+                    created_at TIMESTAMP
+            );""";
+
             var statement = conn.createStatement();
             statement.execute(sql);
         } else {
