@@ -1,16 +1,20 @@
-FROM gradle:8.13
+FROM gradle:8.13 as builder
 
 WORKDIR /app
 
-COPY /app .
+# Скопируйте все файлы проекта
+COPY . .
 
+# Установите зависимости и соберите проект
 RUN gradle installDist
 
-COPY app/build/libs/app-1.0-SNAPSHOT-all.jar /app.jar
+# Создайте финальный образ
+FROM openjdk:17-jdk-slim
 
-# This is the port that your javalin application will listen on
+WORKDIR /app
+
+COPY --from=builder /app/build/libs/app-1.0-SNAPSHOT-all.jar /app.jar
+
 EXPOSE 7070
 
 ENTRYPOINT ["java", "-jar", "/app.jar"]
-
-# CMD java -jar ./build/libs/app-1.0-SNAPSHOT-all.jar
