@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 //import java.util.List;
@@ -65,11 +64,11 @@ public class App {
         String db = System.getenv().getOrDefault("JDBC_DATABASE_URL", "Fuck!");
         if (db.startsWith("jdbc:postgresql")) {
             var conn = DriverManager.getConnection("jdbc:h2:mem:project");
-            var sql = "CREATE TABLE users (id BIGINT PRIMARY KEY AUTO_INCREMENT, username VARCHAR(255), phone VARCHAR(255))";
+            var sql = "CREATE TABLE users (id BIGINT PRIMARY KEY AUTO_INCREMENT, " +
+                    "username VARCHAR(255), phone VARCHAR(255))";
             var statement = conn.createStatement();
             statement.execute(sql);
-        }
-        else {
+        } else {
             var hikariConfig = new HikariConfig();
             hikariConfig.setJdbcUrl("jdbc:h2:mem:project;DB_CLOSE_DELAY=-1;");
 
