@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 //import java.util.List;
 import java.util.stream.Collectors;
@@ -23,13 +25,13 @@ import hexlet.code.dto.MainPage;
 //import org.example.hexlet.dto.users.UsersPage;
 //import org.example.hexlet.model.Course;
 //import org.example.hexlet.model.User;
-//import org.example.hexlet.repository.BaseRepository;
+import hexlet.code.repository.BaseRepository;
 //import org.example.hexlet.repository.CourseRepository;
 //import org.example.hexlet.repository.UserRepository;
 //import hexlet.code.util.NamedRoutes;
 
-//import com.zaxxer.hikari.HikariConfig;
-//import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import io.javalin.Javalin;
 //import io.javalin.validation.ValidationException;
@@ -60,19 +62,27 @@ public class App {
     public static Javalin getApp() throws IOException, SQLException {
         // System.setProperty("h2.traceLevel", "TRACE_LEVEL_SYSTEM_OUT=4");
 
-        //var hikariConfig = new HikariConfig();
-        //hikariConfig.setJdbcUrl("jdbc:h2:mem:project;DB_CLOSE_DELAY=-1;");
-
-        //var dataSource = new HikariDataSource(hikariConfig);
-        //var sql = readResourceFile("schema.sql");
-        /*
-        log.info(sql);
-        try (var connection = dataSource.getConnection();
-             var statement = connection.createStatement()) {
+        String db = System.getenv().getOrDefault("JDBC_DATABASE_URL", "Fuck!");
+        if (db.startsWith("jdbc:postgresql")) {
+            var conn = DriverManager.getConnection("jdbc:h2:mem:project");
+            var sql = "CREATE TABLE users (id BIGINT PRIMARY KEY AUTO_INCREMENT, username VARCHAR(255), phone VARCHAR(255))";
+            var statement = conn.createStatement();
             statement.execute(sql);
         }
-        BaseRepository.dataSource = dataSource;
-        */
+        else {
+            var hikariConfig = new HikariConfig();
+            hikariConfig.setJdbcUrl("jdbc:h2:mem:project;DB_CLOSE_DELAY=-1;");
+
+            var dataSource = new HikariDataSource(hikariConfig);
+            var sql = readResourceFile("schema.sql");
+
+            try (var connection = dataSource.getConnection();
+                 var statement = connection.createStatement()) {
+                statement.execute(sql);
+            }
+            BaseRepository.dataSource = dataSource;
+        }
+
         var app = Javalin.create(config -> {
             config.bundledPlugins.enableDevLogging();
             config.fileRenderer(new JavalinJte());
@@ -99,12 +109,15 @@ public class App {
         app.get("/cars/{id}", CarsController::show);
         app.post("/cars", CarsController::create);
         */
+        //app.get("/", ctx -> ctx.result("Hello World"));
+
         app.get("/", ctx -> {
             var visited = Boolean.valueOf(ctx.cookie("visited"));
             var page = new MainPage(visited, ctx.sessionAttribute("currentUser"));
             ctx.render("index.jte", model("page", page));
             ctx.cookie("visited", String.valueOf(true));
         });
+
         /*
         app.get(NamedRoutes.buildUserPath(), ctx -> {
             var page = new BuildUserPage();

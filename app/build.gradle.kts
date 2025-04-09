@@ -14,11 +14,6 @@ application {
     mainClass.set("hexlet.code.App")
 }
 
-//checkstyle {
-    //toolVersion = "10.22.0"
-    //configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
-//}
-
 group = "hexlet.code"
 version = "1.0-SNAPSHOT"
 
