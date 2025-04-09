@@ -6,7 +6,7 @@ COPY /app .
 
 RUN gradle installDist
 
-COPY build/libs/app-1.0-SNAPSHOT-all.jar /app.jar
+COPY app/build/libs/app-1.0-SNAPSHOT-all.jar /app.jar
 
 # This is the port that your javalin application will listen on
 EXPOSE 7070
