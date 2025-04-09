@@ -6,4 +6,11 @@ COPY /app .
 
 RUN gradle installDist
 
-CMD java -jar ./build/libs/app-1.0-SNAPSHOT-all.jar
+COPY build/libs/app-1.0-SNAPSHOT-all.jar /app.jar
+
+# This is the port that your javalin application will listen on
+EXPOSE 7070
+
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+
+# CMD java -jar ./build/libs/app-1.0-SNAPSHOT-all.jar
