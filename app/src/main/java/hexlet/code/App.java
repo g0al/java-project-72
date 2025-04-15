@@ -4,41 +4,52 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-//import java.util.List;
+import java.util.List;
 import java.util.stream.Collectors;
+import java.net.URL;
+import java.net.URI;
 
+import hexlet.code.dto.BasePage;
+import hexlet.code.dto.UrlPage;
+import hexlet.code.dto.UrlsPage;
+import hexlet.code.model.Url;
+import hexlet.code.model.UrlCheck;
+import hexlet.code.repository.UrlRepository;
+import hexlet.code.repository.UrlCheckRepository;
+import hexlet.code.util.NamedRoutes;
+import io.javalin.http.NotFoundResponse;
 import io.javalin.rendering.template.JavalinJte;
 
 import static io.javalin.rendering.template.TemplateUtil.model;
 
-//import org.example.hexlet.controller.CarsController;
-//import org.example.hexlet.controller.PostsController;
-//import org.example.hexlet.controller.SessionsController;
-//import org.example.hexlet.controller.UsersController;
-import hexlet.code.dto.MainPage;
-//import org.example.hexlet.dto.courses.CoursesPage;
-//import org.example.hexlet.dto.courses.CoursePage;
-//import org.example.hexlet.dto.users.BuildUserPage;
-//import org.example.hexlet.dto.users.UsersPage;
-//import org.example.hexlet.model.Course;
-//import org.example.hexlet.model.User;
 import hexlet.code.repository.BaseRepository;
-//import org.example.hexlet.repository.CourseRepository;
-//import org.example.hexlet.repository.UserRepository;
-//import hexlet.code.util.NamedRoutes;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import io.javalin.Javalin;
-//import io.javalin.validation.ValidationException;
-//import io.javalin.http.NotFoundResponse;
+import kong.unirest.HttpResponse;
+import kong.unirest.JsonNode;
+import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
+
+import gg.jte.ContentType;
+import gg.jte.TemplateEngine;
+import gg.jte.resolve.ResourceCodeResolver;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 @Slf4j
 public class App {
+
+    private static TemplateEngine createTemplateEngine() {
+        ClassLoader classLoader = App.class.getClassLoader();
+        ResourceCodeResolver codeResolver = new ResourceCodeResolver("templates", classLoader);
+        TemplateEngine templateEngine = TemplateEngine.create(codeResolver, ContentType.Html);
+        return templateEngine;
+    }
 
     private static int getPort() {
         String port = System.getenv().getOrDefault("PORT", "7070");
@@ -59,23 +70,9 @@ public class App {
     }
 
     public static Javalin getApp() throws IOException, SQLException {
-        // System.setProperty("h2.traceLevel", "TRACE_LEVEL_SYSTEM_OUT=4");
 
-        String db = System.getenv().getOrDefault("JDBC_DATABASE_URL", "Fuck!");
-        if (db.startsWith("jdbc:postgresql")) {
-            var conn = DriverManager.getConnection("jdbc:h2:mem:project");
-            var sql = """
-            DROP TABLE IF EXISTS urls
-
-            CREATE TABLE urls (
-                    id INT PRIMARY KEY AUTO_INCREMENT,
-                    name VARCHAR(255) NOT NULL,
-                    created_at TIMESTAMP
-            );""";
-
-            var statement = conn.createStatement();
-            statement.execute(sql);
-        } else {
+        String db = System.getenv().getOrDefault("JDBC_DATABASE_URL", "Hikari");
+        if (!db.startsWith("jdbc:postgresql")) {
             var hikariConfig = new HikariConfig();
             hikariConfig.setJdbcUrl("jdbc:h2:mem:project;DB_CLOSE_DELAY=-1;");
 
@@ -91,111 +88,105 @@ public class App {
 
         var app = Javalin.create(config -> {
             config.bundledPlugins.enableDevLogging();
-            config.fileRenderer(new JavalinJte());
+            config.fileRenderer(new JavalinJte(createTemplateEngine()));
         });
 
         app.before(ctx -> {
             ctx.contentType("text/html; charset=utf-8");
         });
-        /*
-        app.get("/sessions/build", SessionsController::build);
-        app.post("/sessions", SessionsController::create);
-        app.delete("/sessions", SessionsController::destroy);
-
-        app.get("/posts", PostsController::index);
-        app.get("/posts/{id}", PostsController::show);
-        app.get("/posts/build", PostsController::build);
-        app.post("/posts", PostsController::create);
-        app.get("/posts/{id}/edit", PostsController::edit);
-        app.patch("/posts/{id}", PostsController::update);
-        app.delete("/posts", PostsController::destroy);
-
-        app.get("/cars", CarsController::index);
-        app.get("/cars/build", CarsController::build);
-        app.get("/cars/{id}", CarsController::show);
-        app.post("/cars", CarsController::create);
-        */
-        //app.get("/", ctx -> ctx.result("Hello World"));
 
         app.get("/", ctx -> {
-            var visited = Boolean.valueOf(ctx.cookie("visited"));
-            var page = new MainPage(visited, ctx.sessionAttribute("currentUser"));
-            ctx.render("index.jte", model("page", page));
-            ctx.cookie("visited", String.valueOf(true));
-        });
-
-        /*
-        app.get(NamedRoutes.buildUserPath(), ctx -> {
-            var page = new BuildUserPage();
-            ctx.render("users/build.jte", model("page", page));
-        });
-
-        app.get("/users/{id}", UsersController::show);
-
-        app.post(NamedRoutes.usersPath(), ctx -> {
-            var name = ctx.formParam("name").trim();
-            var email = ctx.formParam("email").trim().toLowerCase();
-
-            try {
-                var passwordConfirmation = ctx.formParam("passwordConfirmation");
-                var password = ctx.formParamAsClass("password", String.class)
-                        .check(value -> value.equals(passwordConfirmation), "Passwords are not the same")
-                        .check(value -> value.length() > 6, "Password is to short")
-                        .get();
-                var user = new User(name, email, password);
-                UserRepository.save(user);
-                ctx.redirect(NamedRoutes.usersPath());
-            } catch (ValidationException e) {
-                var page = new BuildUserPage(name, email, e.getErrors());
-                ctx.render("users/build.jte", model("page", page));
-            }
-        });
-
-        app.get(NamedRoutes.usersPath(), ctx -> {
-            var users = UserRepository.getEntities();
-            var page = new UsersPage(users);
-            // Отдаем обратно url + query params
-            ctx.render("users/index.jte", model("page", page));
-        });
-
-        app.get(NamedRoutes.buildCoursePath(), ctx -> {
-            ctx.render("courses/build.jte");
-        });
-
-        app.get(NamedRoutes.coursesPath(), ctx -> {
-            var term = ctx.queryParam("term");
-            // ctx.sessionAttribute("key", "value");
-            List<Course> courses;
-            if (term != null) {
-                // Фильтруем курсы в соответствии со значением term
-                courses = CourseRepository.search(term);
-            } else {
-                courses = CourseRepository.getEntities();
-            }
-            var page = new CoursesPage(courses, term);
+            var page = new BasePage();
             page.setFlash(ctx.consumeSessionAttribute("flash"));
-
-            ctx.render("courses/index.jte", model("page", page));
+            ctx.render("index.jte", model("page", page));
         });
 
-        app.get(NamedRoutes.coursePath("{id}"), ctx -> {
+        app.post(NamedRoutes.checkUrlPath("{id}"), ctx -> {
             var id = ctx.pathParamAsClass("id", Long.class).get();
-            var course = CourseRepository.find(id)
-                    .orElseThrow(() -> new NotFoundResponse("Entity with id = " + id + " not found"));
-            var page = new CoursePage(course);
-            ctx.render("courses/show.jte", model("page", page));
+
+            var urlCheck = new UrlCheck(id);
+            String url = "";
+            if (UrlRepository.find(id).isPresent()) {
+                url = UrlRepository.find(id).get().getName();
+            }
+            HttpResponse<JsonNode> jsonResponse = Unirest.get(url).asJson();
+            urlCheck.setStatusCode(jsonResponse.getStatus());
+
+            if (jsonResponse.getStatus() == 200) {
+                Document doc = Jsoup.connect(url).get();
+
+                String title = doc.title();
+                urlCheck.setTitle(title);
+
+                Element h1 = doc.selectFirst("h1");
+                if (h1 != null) {
+                    urlCheck.setH1(h1.text());
+                }
+
+                Element metaDescription = doc.selectFirst("meta[name=description]");
+                if (metaDescription != null) {
+                    String content = metaDescription.attr("content");
+                    urlCheck.setDescription(content);
+                }
+            }
+            UrlCheckRepository.save(urlCheck);
+            ctx.redirect(NamedRoutes.urlPath(id));
         });
 
-        app.post(NamedRoutes.coursesPath(), ctx -> {
-            var name = ctx.formParam("name");
-            var description = ctx.formParam("description");
-
-            var course = new Course(name, description);
-            CourseRepository.save(course);
-            ctx.sessionAttribute("flash", "Course has been created!");
-            ctx.redirect(NamedRoutes.coursesPath());
+        app.get(NamedRoutes.urlsPath(), ctx -> {
+            List<Url> urls;
+            List<UrlCheck> urlChecks;
+            urls = UrlRepository.getEntities();
+            urlChecks = UrlCheckRepository.getEntities();
+            var page = new UrlsPage(urls, urlChecks);
+            page.setFlash(ctx.consumeSessionAttribute("flash"));
+            ctx.render("urls/index.jte", model("page", page));
         });
-         */
+
+        app.get(NamedRoutes.urlPath("{id}"), ctx -> {
+            var id = ctx.pathParamAsClass("id", Long.class).get();
+            var url = UrlRepository.find(id)
+                    .orElseThrow(() -> new NotFoundResponse("Url with id = " + id + " not found"));
+            List<UrlCheck> urlChecks = List.of();
+            if (!UrlCheckRepository.find(id).isEmpty()) {
+                urlChecks = UrlCheckRepository.find(id);
+            }
+            var page = new UrlPage(url, urlChecks);
+            ctx.render("urls/show.jte", model("page", page));
+        });
+
+        app.post(NamedRoutes.urlsPath(), ctx -> {
+            try {
+                var name = ctx.formParam("name");
+                String finalName;
+                URI uri = new URI(name);
+                URL urlFromUri = uri.toURL();
+                var protocol = urlFromUri.getProtocol();
+                var host = urlFromUri.getHost();
+                var port = urlFromUri.getPort();
+                name = protocol + "://" + host;
+                if (port != -1) {
+                    finalName = name + ":" + port;
+                } else {
+                    finalName = name;
+                }
+
+                var url = new Url(finalName);
+
+                if (UrlRepository.search(name).isEmpty()) {
+                    UrlRepository.save(url);
+                    ctx.sessionAttribute("flash", "Страница успешно добавлена");
+                    ctx.redirect(NamedRoutes.urlsPath());
+                } else {
+                    ctx.sessionAttribute("flash", "Страница уже существует");
+                    ctx.redirect(NamedRoutes.urlsPath());
+                }
+            } catch (Exception e) {
+                ctx.sessionAttribute("flash", "Ошибка при вводе адреса");
+                ctx.redirect(NamedRoutes.indexPath());
+            }
+        });
+
         return app;
     }
 }

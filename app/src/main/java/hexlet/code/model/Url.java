@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Setter
 @ToString
 public class Url {
-    private int id;
+    private long id;
 
     @ToString.Include
     private String name;
