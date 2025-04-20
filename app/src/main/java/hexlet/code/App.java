@@ -32,6 +32,7 @@ import io.javalin.Javalin;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
+import kong.unirest.UnirestException;
 import lombok.extern.slf4j.Slf4j;
 
 import gg.jte.ContentType;
@@ -72,19 +73,22 @@ public class App {
     public static Javalin getApp() throws IOException, SQLException {
 
         String db = System.getenv().getOrDefault("JDBC_DATABASE_URL", "Hikari");
+        var hikariConfig = new HikariConfig();
         if (!db.startsWith("jdbc:postgresql")) {
-            var hikariConfig = new HikariConfig();
             hikariConfig.setJdbcUrl("jdbc:h2:mem:project;DB_CLOSE_DELAY=-1;");
+        } //else {
+            //hikariConfig.setJdbcUrl("jdbc:postgresql://<HOST>:<PORT>/<DATABASE_NAME>");
+            //hikariConfig.setUsername("<USERNAME>");
+            //hikariConfig.setPassword("<PASSWORD>");
+        //}
+        var dataSource = new HikariDataSource(hikariConfig);
+        var sql = readResourceFile("schema.sql");
 
-            var dataSource = new HikariDataSource(hikariConfig);
-            var sql = readResourceFile("schema.sql");
-
-            try (var connection = dataSource.getConnection();
-                 var statement = connection.createStatement()) {
-                statement.execute(sql);
-            }
-            BaseRepository.dataSource = dataSource;
+        try (var connection = dataSource.getConnection();
+             var statement = connection.createStatement()) {
+            statement.execute(sql);
         }
+        BaseRepository.dataSource = dataSource;
 
         var app = Javalin.create(config -> {
             config.bundledPlugins.enableDevLogging();
@@ -109,28 +113,36 @@ public class App {
             if (UrlRepository.find(id).isPresent()) {
                 url = UrlRepository.find(id).get().getName();
             }
-            HttpResponse<JsonNode> jsonResponse = Unirest.get(url).asJson();
-            urlCheck.setStatusCode(jsonResponse.getStatus());
-
-            if (jsonResponse.getStatus() == 200) {
-                Document doc = Jsoup.connect(url).get();
-
-                String title = doc.title();
-                urlCheck.setTitle(title);
-
-                Element h1 = doc.selectFirst("h1");
-                if (h1 != null) {
-                    urlCheck.setH1(h1.text());
-                }
-
-                Element metaDescription = doc.selectFirst("meta[name=description]");
-                if (metaDescription != null) {
-                    String content = metaDescription.attr("content");
-                    urlCheck.setDescription(content);
-                }
+            HttpResponse<JsonNode> jsonResponse = null;
+            try {
+                jsonResponse = Unirest.get(url).asJson();
+            } catch (UnirestException e) {
+                ctx.sessionAttribute("flash", "Некорректный адрес");
+                ctx.redirect(NamedRoutes.urlPath(id));
             }
-            UrlCheckRepository.save(urlCheck);
-            ctx.redirect(NamedRoutes.urlPath(id));
+
+            if (jsonResponse != null) {
+                urlCheck.setStatusCode(jsonResponse.getStatus());
+                if (jsonResponse.getStatus() == 200) {
+                    Document doc = Jsoup.connect(url).get();
+
+                    String title = doc.title();
+                    urlCheck.setTitle(title);
+
+                    Element h1 = doc.selectFirst("h1");
+                    if (h1 != null) {
+                        urlCheck.setH1(h1.text());
+                    }
+
+                    Element metaDescription = doc.selectFirst("meta[name=description]");
+                    if (metaDescription != null) {
+                        String content = metaDescription.attr("content");
+                        urlCheck.setDescription(content);
+                    }
+                }
+                UrlCheckRepository.save(urlCheck);
+                ctx.redirect(NamedRoutes.urlPath(id));
+            }
         });
 
         app.get(NamedRoutes.urlsPath(), ctx -> {
@@ -152,6 +164,7 @@ public class App {
                 urlChecks = UrlCheckRepository.find(id);
             }
             var page = new UrlPage(url, urlChecks);
+            page.setFlash(ctx.consumeSessionAttribute("flash"));
             ctx.render("urls/show.jte", model("page", page));
         });
 

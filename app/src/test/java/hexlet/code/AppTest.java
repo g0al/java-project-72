@@ -84,7 +84,7 @@ public class AppTest {
     }
 
     @Test
-    public void testUrlCheck() throws IOException {
+    public void testUrlCheck() throws IOException, SQLException {
         var url = new Url(baseUrl);
         UrlRepository.save(url);
         var urlCheck = new UrlCheck((long) 1);
