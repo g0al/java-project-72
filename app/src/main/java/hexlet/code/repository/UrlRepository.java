@@ -18,11 +18,11 @@ public class UrlRepository {
     private static List<Url> entities = new ArrayList<Url>();
 
     public static String getDbType() {
-        String db = System.getenv().getOrDefault("JDBC_DATABASE_URL", "Hikari");
+        var db = System.getenv().getOrDefault("JDBC_DATABASE_URL", "jdbc:h2:mem:project");
         var hikariConfig = new HikariConfig();
         if (!db.startsWith("jdbc:postgresql")) {
-            hikariConfig.setJdbcUrl("jdbc:h2:mem:project;DB_CLOSE_DELAY=-1;");
-            return "Hikari";
+            hikariConfig.setJdbcUrl(db);
+            return "H2";
         }
         return "Postgres";
     }
@@ -78,7 +78,6 @@ public class UrlRepository {
         }
     }
 
-
     public static Optional<Url> search(String name) {
         return entities.stream()
                 .filter(entity -> entity.getName().equals(name))
@@ -97,7 +96,6 @@ public class UrlRepository {
                     var id = resultSet.getLong("id");
                     var name = resultSet.getString("name");
                     var createdAt = resultSet.getTimestamp("created_at").toLocalDateTime();
-
                     var url = new Url(name);
                     url.setId(id);
                     url.setCreatedAt(createdAt);
