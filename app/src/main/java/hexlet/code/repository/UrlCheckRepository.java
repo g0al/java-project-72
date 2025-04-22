@@ -2,94 +2,103 @@ package hexlet.code.repository;
 
 import hexlet.code.model.UrlCheck;
 
-import java.io.IOException;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class UrlCheckRepository {
+public class UrlCheckRepository extends BaseRepository {
 
-    private static List<UrlCheck> entities = new ArrayList<UrlCheck>();
+    public static void save(UrlCheck check) throws SQLException {
+        var sql = "INSERT INTO url_checks (url_id, status_code, title, h1, description, created_at) "
+                + "VALUES (?, ?, ?, ?, ?, ?)";
+        LocalDateTime createdAt = LocalDateTime.now();
+        try (var conn = dataSource.getConnection();
+             var preparedStatement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            preparedStatement.setLong(1, check.getUrlId());
+            preparedStatement.setLong(2, check.getStatusCode());
+            preparedStatement.setString(3, check.getTitle());
+            preparedStatement.setString(4, check.getH1());
+            preparedStatement.setString(5, check.getDescription());
+            preparedStatement.setTimestamp(6, Timestamp.valueOf(createdAt));
 
-    public static void save(UrlCheck urlCheck) throws IOException {
-        urlCheck.setId((long) entities.size() + 1);
-        urlCheck.setCreatedAt(LocalDateTime.now());
-        entities.add(urlCheck);
+            preparedStatement.executeUpdate();
+            var generatedKeys = preparedStatement.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                check.setId(generatedKeys.getLong(1));
+                //log.info("Check saved: {} {}", check.getTitle(), check.getH1());
+            } else {
+                throw new SQLException("DB did not return an ID after saving an entity");
+            }
+        } catch (SQLException e) {
+            //log.error("Error saving Check: {} {}", check.getTitle(), check.getId(), e);
+            throw e;
+        }
     }
 
-    public static List<UrlCheck> find(Long id) {
-        var urlChecks = entities.stream()
-                .filter(entity -> entity.getUrlId() == id)
-                .toList();
-        return urlChecks;
+    public static List<UrlCheck> getChecksForUrl(Long urlId) throws SQLException {
+        var sql = "SELECT id, url_id, status_code, title, h1, description, created_at FROM url_checks WHERE url_id = ?";
+        List<UrlCheck> checks = new ArrayList<>();
+        try (var conn = dataSource.getConnection();
+             var preparedStatement = conn.prepareStatement(sql)) {
+
+            preparedStatement.setLong(1, urlId);
+
+            try (var resultSet = preparedStatement.executeQuery()) {
+                while (resultSet.next()) {
+                    UrlCheck check = new UrlCheck(
+                            resultSet.getLong("url_id"),
+                            resultSet.getInt("status_code"),
+                            resultSet.getString("title"),
+                            resultSet.getString("h1"),
+                            resultSet.getString("description"),
+                            resultSet.getTimestamp("created_at").toLocalDateTime()
+                    );
+                    check.setId(resultSet.getLong("id"));
+                    checks.add(check);
+                }
+            }
+        }
+        return checks;
     }
 
-    public static List<UrlCheck> getEntities() {
-        return entities;
-    }
+    public static Map<Long, UrlCheck> getLastChecks() throws SQLException {
+        String sql = """
+                SELECT uc.id, uc.url_id, uc.status_code, uc.title, uc.h1, uc.description, uc.created_at
+                FROM url_checks uc
+                INNER JOIN (
+                    SELECT url_id, MAX(created_at) AS last_check
+                    FROM url_checks
+                    GROUP BY url_id
+                ) grouped_uc
+                ON uc.url_id = grouped_uc.url_id AND uc.created_at = grouped_uc.last_check
+                """;
 
-    public static void removeAll() {
-        entities = new ArrayList<UrlCheck>();
-    }
-}
+        Map<Long, UrlCheck> lastChecks = new HashMap<>();
 
-/*
-public static void save(Url url) throws SQLException {
-    var sql = "INSERT INTO cars (name) VALUES (?)";
-    try (var conn = dataSource.getConnection();
-         var preparedStatement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-        preparedStatement.setString(1, url.getName());
-        var createdAt = LocalDateTime.now();
-        preparedStatement.setTimestamp(3, Timestamp.valueOf(createdAt));
+        try (var conn = dataSource.getConnection();
+             var preparedStatement = conn.prepareStatement(sql);
+             var resultSet = preparedStatement.executeQuery()) {
 
-        preparedStatement.executeUpdate();
-        var generatedKeys = preparedStatement.getGeneratedKeys();
-        if (generatedKeys.next()) {
-            url.setId(generatedKeys.getLong(1));
-            url.setCreatedAt(createdAt);
-        } else {
-            throw new SQLException("DB have not returned an id after saving an entity");
+            while (resultSet.next()) {
+                UrlCheck check = new UrlCheck(
+                        resultSet.getLong("url_id"),
+                        resultSet.getInt("status_code"),
+                        resultSet.getString("title"),
+                        resultSet.getString("h1"),
+                        resultSet.getString("description"),
+                        resultSet.getTimestamp("created_at").toLocalDateTime()
+                );
+                check.setId(resultSet.getLong("id"));
+                check.setCreatedAt(resultSet.getTimestamp("created_at").toLocalDateTime());
+
+                lastChecks.put(check.getUrlId(), check);
+            }
+            return lastChecks;
         }
     }
 }
-
-public static Optional<Url> find(Long id) throws SQLException {
-    var sql = "SELECT * FROM urls WHERE id = ?";
-    try (var conn = dataSource.getConnection();
-         var stmt = conn.prepareStatement(sql)) {
-        stmt.setLong(1, id);
-        var resultSet = stmt.executeQuery();
-        if (resultSet.next()) {
-            var name = resultSet.getString("name");
-            var createdAt = resultSet.getTimestamp("created_at").toLocalDateTime();
-
-            var url = new Url(name);
-            url.setId(id);
-            url.setCreatedAt(createdAt);
-            return Optional.of(url);
-        }
-        return Optional.empty();
-    }
-}
-
-public static List<Url> getEntities() throws SQLException {
-    var sql = "SELECT * FROM urls";
-    try (var conn = dataSource.getConnection();
-         var stmt = conn.prepareStatement(sql)) {
-        var resultSet = stmt.executeQuery();
-        var result = new ArrayList<Url>();
-        while (resultSet.next()) {
-            var id = resultSet.getLong("id");
-            var name = resultSet.getString("name");
-            var createdAt = resultSet.getTimestamp("created_at").toLocalDateTime();
-
-            var url = new Url(name);
-            url.setId(id);
-            url.setCreatedAt(createdAt);
-            result.add(url);
-        }
-        return result;
-    }
-
- */
-

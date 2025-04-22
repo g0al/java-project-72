@@ -2,15 +2,21 @@ package hexlet.code.dto;
 
 import hexlet.code.model.Url;
 import hexlet.code.model.UrlCheck;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
+import java.util.Map;
 
-@AllArgsConstructor
+
 @Getter
+@Setter
 public class UrlsPage extends BasePage {
     private List<Url> urls;
+    private Map<Long, UrlCheck> lastChecks;
 
-    private List<UrlCheck> urlChecks;
+    public UrlsPage(List<Url> urls, Map<Long, UrlCheck> lastChecks) {
+        setUrls(urls);
+        setLastChecks(lastChecks);
+    }
 }

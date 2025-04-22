@@ -13,8 +13,4 @@ public class UrlPage extends BasePage {
     private Url url;
 
     private List<UrlCheck> urlChecks;
-
-    public UrlPage(Url url) {
-        this.url = url;
-    }
 }

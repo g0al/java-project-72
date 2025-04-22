@@ -22,6 +22,7 @@ import java.net.URI;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 import static io.javalin.rendering.template.TemplateUtil.model;
 
@@ -31,8 +32,8 @@ public class UrlsController {
         var id = ctx.pathParamAsClass("id", Long.class).get();
         var urlCheck = new UrlCheck(id);
         String url = "";
-        if (UrlRepository.find(id).isPresent()) {
-            url = UrlRepository.find(id).get().getName();
+        if (UrlRepository.findById(id).isPresent()) {
+            url = UrlRepository.findById(id).get().getName();
         }
         HttpResponse<JsonNode> jsonResponse = null;
         try {
@@ -66,9 +67,9 @@ public class UrlsController {
 
     public static void index(Context ctx) throws SQLException {
         List<Url> urls;
-        List<UrlCheck> urlChecks;
+        Map<Long, UrlCheck> urlChecks;
         urls = UrlRepository.getEntities();
-        urlChecks = UrlCheckRepository.getEntities();
+        urlChecks = UrlCheckRepository.getLastChecks();
         var page = new UrlsPage(urls, urlChecks);
         page.setFlash(ctx.consumeSessionAttribute("flash"));
         ctx.render("urls/index.jte", model("page", page));
@@ -76,11 +77,11 @@ public class UrlsController {
 
     public static void show(Context ctx) throws SQLException {
         var id = ctx.pathParamAsClass("id", Long.class).get();
-        var url = UrlRepository.find(id)
+        var url = UrlRepository.findById(id)
                 .orElseThrow(() -> new NotFoundResponse("Url with id = " + id + " not found"));
         List<UrlCheck> urlChecks = List.of();
-        if (!UrlCheckRepository.find(id).isEmpty()) {
-            urlChecks = UrlCheckRepository.find(id);
+        if (!UrlCheckRepository.getChecksForUrl(id).isEmpty()) {
+            urlChecks = UrlCheckRepository.getChecksForUrl(id);
         }
         var page = new UrlPage(url, urlChecks);
         page.setFlash(ctx.consumeSessionAttribute("flash"));
@@ -105,7 +106,7 @@ public class UrlsController {
 
             var url = new Url(finalName);
 
-            if (UrlRepository.search(name).isEmpty()) {
+            if (UrlRepository.findByName(name).isEmpty()) {
                 UrlRepository.save(url);
                 ctx.sessionAttribute("flash", "Страница успешно добавлена");
                 ctx.redirect(NamedRoutes.urlsPath());

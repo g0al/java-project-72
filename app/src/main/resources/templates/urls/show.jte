@@ -45,14 +45,14 @@ content = @`
                         <td>description</td>
                         <td>Дата проверки</td>
                     </tr>
-        @for(var urlCheck : page.getUrlChecks())
+        @for(var lastCheck : page.getUrlChecks())
                     <tr>
-                        <td>${urlCheck.getId()}</td>
-                        <td>${urlCheck.getStatusCode()}</td>
-                        <td>${urlCheck.getTitle()}</td>
-                        <td>${urlCheck.getH1()}</td>
-                        <td>${urlCheck.getDescription()}</td>
-                        <td>${urlCheck.getCreatedAt().toString()}</td>
+                        <td>${lastCheck.getId()}</td>
+                        <td>${lastCheck.getStatusCode()}</td>
+                        <td>${lastCheck.getTitle()}</td>
+                        <td>${lastCheck.getH1()}</td>
+                        <td>${lastCheck.getDescription()}</td>
+                        <td>${lastCheck.getCreatedAt().toString()}</td>
                     </tr>
                 </table>
             </div>

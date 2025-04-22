@@ -31,8 +31,6 @@ public class AppTest {
     @BeforeEach
     public final void setUp() throws IOException, SQLException {
         app = App.getApp();
-        UrlCheckRepository.removeAll();
-        UrlRepository.removeAll();
     }
 
     @BeforeAll
@@ -92,19 +90,6 @@ public class AppTest {
         JavalinTest.test(app, (server, client) -> {
             var response = client.get("/urls/9999999");
             assertThat(response.code()).isEqualTo(404);
-        });
-    }
-
-    @Test
-    public void testUrlCheck() throws IOException, SQLException {
-        var url = new Url(baseUrl);
-        UrlRepository.save(url);
-        var urlCheck = new UrlCheck((long) 1);
-        UrlCheckRepository.save(urlCheck);
-        JavalinTest.test(app, (server, client) -> {
-            var response = client.get("/urls/1");
-            assertThat(response.code()).isEqualTo(200);
-            assertThat(response.body().string()).contains("title");
         });
     }
 

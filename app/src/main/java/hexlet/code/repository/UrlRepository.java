@@ -1,8 +1,8 @@
 package hexlet.code.repository;
 
-import com.zaxxer.hikari.HikariConfig;
 import hexlet.code.model.Url;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -11,104 +11,94 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static hexlet.code.repository.BaseRepository.dataSource;
-
-public class UrlRepository {
-
-    private static List<Url> entities = new ArrayList<Url>();
-
-    public static String getDbType() {
-        var db = System.getenv().getOrDefault("JDBC_DATABASE_URL", "jdbc:h2:mem:project");
-        var hikariConfig = new HikariConfig();
-        if (!db.startsWith("jdbc:postgresql")) {
-            hikariConfig.setJdbcUrl(db);
-            return "H2";
-        }
-        return "Postgres";
-    }
+public class UrlRepository extends BaseRepository {
 
     public static void save(Url url) throws SQLException {
-        String dbType = getDbType();
-        if (dbType.equals("Postgres")) {
-            var sql = "INSERT INTO urls (name) VALUES (?)";
-            try (var conn = dataSource.getConnection();
-                 var preparedStatement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-                preparedStatement.setString(1, url.getName());
-                var createdAt = LocalDateTime.now();
-                preparedStatement.setTimestamp(3, Timestamp.valueOf(createdAt));
+        var sql = "INSERT INTO urls (name, created_at) VALUES (?, ?)";
+        try (var conn = dataSource.getConnection();
+             var preparedStatement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            preparedStatement.setString(1, url.getName());
+            var createdAt = Timestamp.valueOf(LocalDateTime.now());
+            preparedStatement.setTimestamp(2, createdAt);
 
-                preparedStatement.executeUpdate();
-                var generatedKeys = preparedStatement.getGeneratedKeys();
-                if (generatedKeys.next()) {
-                    url.setId(generatedKeys.getLong(1));
-                    url.setCreatedAt(createdAt);
-                } else {
-                    throw new SQLException("DB have not returned an id after saving an entity");
-                }
+            preparedStatement.executeUpdate();
+            var generatedKeys = preparedStatement.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                url.setId(generatedKeys.getLong(1));
+                url.setCreatedAt(createdAt.toLocalDateTime());
+
+                //log.info("URL saved: {}", url.getName());
+            } else {
+                throw new SQLException("DB did not return an ID after saving an entity");
             }
-        } else {
-            url.setId((long) entities.size() + 1);
-            url.setCreatedAt(LocalDateTime.now());
-            entities.add(url);
+        } catch (SQLException e) {
+            //log.error("Error saving URL: {}", url.getName(), e);
+            throw e;
         }
     }
 
-    public static Optional<Url> find(Long id) throws SQLException {
-        String dbType = getDbType();
-        if (dbType.equals("Postgres")) {
-            var sql = "SELECT * FROM urls WHERE id = ?";
-            try (var conn = dataSource.getConnection();
-                 var stmt = conn.prepareStatement(sql)) {
-                stmt.setLong(1, id);
-                var resultSet = stmt.executeQuery();
+    public static Optional<Url> findByName(String name) throws SQLException {
+        var sql = "SELECT id, name, created_at FROM urls WHERE name = ?";
+        try (var conn = dataSource.getConnection();
+             var preparedStatement = conn.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, name);
+
+            try (var resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
-                    var name = resultSet.getString("name");
-                    var createdAt = resultSet.getTimestamp("created_at").toLocalDateTime();
-                    var url = new Url(name);
-                    url.setId(id);
-                    url.setCreatedAt(createdAt);
-                    return Optional.of(url);
+                    return Optional.of(mapResultSetToUrl(resultSet));
                 }
-                return Optional.empty();
             }
-        } else {
-            return entities.stream()
-                    .filter(entity -> entity.getId() == id)
-                    .findAny();
         }
+        return Optional.empty();
     }
 
-    public static Optional<Url> search(String name) {
-        return entities.stream()
-                .filter(entity -> entity.getName().equals(name))
-                .findAny();
+    public static Optional<Url> findById(Long id) throws SQLException {
+        var sql = "SELECT id, name, created_at FROM urls WHERE id = ?";
+        try (var conn = dataSource.getConnection();
+             var preparedStatement = conn.prepareStatement(sql)) {
+
+            preparedStatement.setLong(1, id);
+
+            try (var resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return Optional.of(mapResultSetToUrl(resultSet));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    public static boolean existsByName(String name) throws SQLException {
+        var sql = "SELECT 1 FROM urls WHERE name = ? LIMIT 1";
+        try (var conn = dataSource.getConnection();
+             var preparedStatement = conn.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, name);
+            try (var resultSet = preparedStatement.executeQuery()) {
+                return resultSet.next();
+            }
+        }
     }
 
     public static List<Url> getEntities() throws SQLException {
-        String dbType = getDbType();
-        if (dbType.equals("Postgres")) {
-            var sql = "SELECT * FROM urls";
-            try (var conn = dataSource.getConnection();
-                var stmt = conn.prepareStatement(sql)) {
-                var resultSet = stmt.executeQuery();
-                var result = new ArrayList<Url>();
-                while (resultSet.next()) {
-                    var id = resultSet.getLong("id");
-                    var name = resultSet.getString("name");
-                    var createdAt = resultSet.getTimestamp("created_at").toLocalDateTime();
-                    var url = new Url(name);
-                    url.setId(id);
-                    url.setCreatedAt(createdAt);
-                    result.add(url);
-                }
-                return result;
+        var sql = "SELECT id, name, created_at FROM urls";
+        List<Url> urls = new ArrayList<>();
+        try (var conn = dataSource.getConnection();
+             var preparedStatement = conn.prepareStatement(sql);
+             var resultSet = preparedStatement.executeQuery()) {
+
+            while (resultSet.next()) {
+                urls.add(mapResultSetToUrl(resultSet));
             }
-        } else {
-            return entities;
         }
+        return urls;
     }
 
-    public static void removeAll() {
-        entities = new ArrayList<>();
+    private static Url mapResultSetToUrl(ResultSet resultSet) throws SQLException {
+        Url url = new Url(resultSet.getString("name"));
+        url.setId(resultSet.getLong("id"));
+        url.setCreatedAt(resultSet.getTimestamp("created_at").toLocalDateTime());
+        return url;
     }
 }
