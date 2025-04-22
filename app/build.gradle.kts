@@ -34,6 +34,7 @@ dependencies {
     // jsoup HTML parser library @ https://jsoup.org/
     implementation ("org.jsoup:jsoup:1.19.1")
     implementation ("com.konghq:unirest-java:3.14.5")
+    implementation("org.postgresql:postgresql:42.7.2")
 
     testImplementation("org.assertj:assertj-core:3.25.3")
     testImplementation(platform("org.junit:junit-bom:5.10.1"))
