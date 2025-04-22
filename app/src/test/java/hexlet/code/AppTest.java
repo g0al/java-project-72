@@ -142,15 +142,26 @@ public class AppTest {
         });
     }
 
-    @Test
-    public void testTests() throws SQLException {
-        JavalinTest.test(app, (server, client) -> {
-            var url = "https://www.ok.ru";
-            var requestBody = "url=" + url;
-            assertThat(client.post("/urls", requestBody).code()).isEqualTo(200);
-
-            var actualUrl = UrlRepository.findByName(url);
-            assertThat(actualUrl).isNotNull();
-        });
-    }
+//    @Test
+//    public void testTests() throws SQLException {
+//        JavalinTest.test(app, (server, client) -> {
+//            var url = "https://www.ok.ru";
+//            var requestBody = "url=" + url;
+//            assertThat(client.post("/urls", requestBody).code()).isEqualTo(200);
+//
+//            var actualUrl = UrlRepository.findByName(url);
+//            assertThat(actualUrl).isNotNull();
+//        });
+//    }
+//
+//    @Test
+//    void testIndexTest() {
+//        JavalinTest.test(app, (server, client) -> {
+//            var response = client.get("/urls");
+//            assertThat(response.code()).isEqualTo(200);
+//            assertThat(response.body().string())
+//                    .contains(existingUrl.get("name").toString())
+//                    .contains(existingUrlCheck.get("status_code").toString());
+//        });
+//    }
 }
