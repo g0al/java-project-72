@@ -11,14 +11,12 @@ import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import io.javalin.http.NotFoundResponse;
 import kong.unirest.HttpResponse;
-import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.sql.SQLException;
@@ -29,41 +27,40 @@ import static io.javalin.rendering.template.TemplateUtil.model;
 
 public class UrlsController {
 
-    public static void check(Context ctx) throws SQLException, IOException {
-        var id = ctx.pathParamAsClass("id", Long.class).get();
-        var urlCheck = new UrlCheck(id);
-        String url = "";
-        if (UrlRepository.findById(id).isPresent()) {
-            url = UrlRepository.findById(id).get().getName();
+    public static void check(Context ctx) throws SQLException {
+        var urlId = ctx.pathParamAsClass("id", Long.class).get();
+
+        var url = UrlRepository.findById(urlId);
+        if (!url.isPresent()) {
+            ctx.status(404).result("URL not found");
+            return;
         }
-        HttpResponse<JsonNode> jsonResponse = null;
+
         try {
-            jsonResponse = Unirest.get(url).asJson();
+            HttpResponse<String> response = Unirest.get(url.get().getName()).asString();
+            UrlCheck check = parseHtml(urlId, response.getBody());
+            UrlCheckRepository.save(check);
+            ctx.redirect(NamedRoutes.urlPath(urlId));
+
         } catch (UnirestException e) {
-            ctx.sessionAttribute("flash", "Некорректный адрес");
-            ctx.redirect(NamedRoutes.urlPath(id));
+            ctx.sessionAttribute("flash", "Invalid URL.");
+            ctx.redirect(NamedRoutes.urlPath(urlId));
+            e.printStackTrace();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
+    }
 
-        if (jsonResponse != null) {
-            urlCheck.setStatusCode(jsonResponse.getStatus());
-            if (jsonResponse.getStatus() == 200) {
-                Document doc = Jsoup.connect(url).get();
-                String title = doc.title();
-                urlCheck.setTitle(title);
-                Element h1 = doc.selectFirst("h1");
-                if (h1 != null) {
-                    urlCheck.setH1(h1.text());
-                }
+    private static UrlCheck parseHtml(Long urlId, String html) {
+        Document doc = Jsoup.parse(html);
+        String title = doc.title();
+        Element h1Element = doc.selectFirst("h1");
+        String h1 = h1Element != null ? h1Element.text() : null;
 
-                Element metaDescription = doc.selectFirst("meta[name=description]");
-                if (metaDescription != null) {
-                    String content = metaDescription.attr("content");
-                    urlCheck.setDescription(content);
-                }
-            }
-            UrlCheckRepository.save(urlCheck);
-            ctx.redirect(NamedRoutes.urlPath(id));
-        }
+        Element metaDescriptionElement = doc.selectFirst("meta[name=description]");
+        String metaDescription = metaDescriptionElement != null ? metaDescriptionElement
+                .attr("content") : null;
+        return new UrlCheck(urlId, 200, title, h1, metaDescription);
     }
 
     public static void index(Context ctx) throws SQLException {

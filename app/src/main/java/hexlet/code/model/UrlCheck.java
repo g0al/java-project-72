@@ -39,7 +39,7 @@ public class UrlCheck {
         this.createdAt = createdAt;
     }
 
-    public UrlCheck(Long id) {
-        this.id = id;
-    }
+    //public UrlCheck(Long id) {
+    //    this.id = id;
+    //}
 }
