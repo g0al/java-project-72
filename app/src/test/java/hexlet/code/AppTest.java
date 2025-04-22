@@ -7,6 +7,7 @@ import okhttp3.mockwebserver.MockWebServer;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
 
 import hexlet.code.model.Url;
 import hexlet.code.model.UrlCheck;
@@ -24,7 +25,8 @@ public class AppTest {
 
     private Javalin app;
     static MockWebServer mockWebServer = new MockWebServer();
-    String baseUrl = mockWebServer.url("/").toString();
+    String baseUrl = mockWebServer.url("/")
+            .toString();
 
     @BeforeEach
     public final void setUp() throws IOException, SQLException {
@@ -66,12 +68,22 @@ public class AppTest {
     }
 
     @Test
-    public void testUrlPage() {
+    public void testShow() throws SQLException {
+
+        String testUrl = "https://example.com";
+        Url urlEntity = new Url(testUrl);
+        UrlRepository.save(urlEntity);
+        Long id = urlEntity.getId();
+
         JavalinTest.test(app, (server, client) -> {
-            Url url = new Url(baseUrl);
-            UrlRepository.save(url);
-            var response = client.get("/urls/" + url.getId());
+
+            var response = client.get("/urls");
+
             assertThat(response.code()).isEqualTo(200);
+
+            String responseBody = response.body().string();
+            assertThat(responseBody).contains(testUrl);
+            assertThat(responseBody).contains("/urls/" + id);
         });
     }
 
@@ -93,6 +105,57 @@ public class AppTest {
             var response = client.get("/urls/1");
             assertThat(response.code()).isEqualTo(200);
             assertThat(response.body().string()).contains("title");
+        });
+    }
+
+    @Test
+    public void testGetUrlById() throws SQLException {
+        var testUrl = "https://www.example.com";
+        var url = new Url(testUrl);
+        UrlRepository.save(url);
+        Long id = url.getId();
+
+        JavalinTest.test(app, (server, client) -> {
+            var response = client.get("/urls/" + id);
+
+            assertThat(response.code()).isEqualTo(200);
+
+            String responseBody = response.body().string();
+            assertThat(responseBody).contains(testUrl);
+        });
+    }
+
+    @Test
+    public void testAddUrlHandlerWithInvalidUrl() {
+        String invalidUrl = "invalid-url";
+
+        JavalinTest.test(app, (server, client) -> {
+            var requestBody = "url=" + invalidUrl;
+
+            var response = client.post("/urls", requestBody);
+
+            assertThat(response.code()).isEqualTo(200);
+
+            List<Url> savedUrls = UrlRepository.getEntities();
+            assertThat(savedUrls).noneMatch(url -> url.getName().equals(invalidUrl));
+        });
+    }
+
+    @Test
+    public void testAddUrlHandlerWithExistingUrl() throws SQLException {
+        var existingUrl = new Url("https://www.example.com");
+        UrlRepository.save(existingUrl);
+
+        JavalinTest.test(app, (server, client) -> {
+            var requestBody = "url=https://www.example.com";
+            var response = client.post("/urls", requestBody);
+
+            assertThat(response.code()).isEqualTo(200);
+
+            List<Url> savedUrls = UrlRepository.getEntities();
+            assertThat(savedUrls)
+                    .filteredOn(url -> url.getName().equals("https://www.example.com"))
+                    .hasSize(1);
         });
     }
 }
