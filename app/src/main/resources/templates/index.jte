@@ -12,7 +12,7 @@ content = @`
 
     <form action="${NamedRoutes.urlsPath()}" method="post">
         Введите URL:
-        <input type="text" required name="name">
+        <input type="text" required name="url">
         <input type="submit">
     </form>
     <p>Пример: https://www.example.com</p>

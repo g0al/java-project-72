@@ -24,7 +24,7 @@ public final class JteindexGenerated {
 					jteOutput.setContext("form", null);
 					jteOutput.writeContent("\"");
 				}
-				jteOutput.writeContent(" method=\"post\">\r\n        Введите URL:\r\n        <input type=\"text\" required name=\"name\">\r\n        <input type=\"submit\">\r\n    </form>\r\n    <p>Пример: https://www.example.com</p>\r\n");
+				jteOutput.writeContent(" method=\"post\">\r\n        Введите URL:\r\n        <input type=\"text\" required name=\"url\">\r\n        <input type=\"submit\">\r\n    </form>\r\n    <p>Пример: https://www.example.com</p>\r\n");
 			}
 		});
 		jteOutput.writeContent("\r\n");
