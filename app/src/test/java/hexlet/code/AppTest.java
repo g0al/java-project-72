@@ -10,8 +10,6 @@ import java.sql.SQLException;
 import java.util.List;
 
 import hexlet.code.model.Url;
-import hexlet.code.model.UrlCheck;
-import hexlet.code.repository.UrlCheckRepository;
 import hexlet.code.repository.UrlRepository;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
