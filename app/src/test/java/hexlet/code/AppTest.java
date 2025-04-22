@@ -141,4 +141,16 @@ public class AppTest {
                     .hasSize(1);
         });
     }
+
+    @Test
+    public void testTests() throws SQLException {
+        JavalinTest.test(app, (server, client) -> {
+            var url = "https://www.ok.ru";
+            var requestBody = "url=" + url;
+            assertThat(client.post("/urls", requestBody).code()).isEqualTo(200);
+
+            var actualUrl = UrlRepository.findByName(url);
+            assertThat(actualUrl).isNotNull();
+        });
+    }
 }
