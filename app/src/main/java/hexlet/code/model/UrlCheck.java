@@ -38,8 +38,4 @@ public class UrlCheck {
         this.description = description;
         this.createdAt = createdAt;
     }
-
-    //public UrlCheck(Long id) {
-    //    this.id = id;
-    //}
 }

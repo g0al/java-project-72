@@ -25,38 +25,45 @@ content = @`
         </table>
     </div>
 
-    <h1>Проверки</h1>
-    <form action="${NamedRoutes.checkUrlPath(page.getUrl().getId())}" method="post">
-        Запустить проверку
-        <input type="submit">
-    </form>
-    @if(page.getUrlChecks().isEmpty())
-        <div>
-            <p>Проверок пока не было</p>
-        </div>
-    @else
-            <div>
-                <table class="table">
+    <div class="container mt-5">
+        <h1 class="text-center">Проверки</h1>
+
+        <form action="${NamedRoutes.checkUrlPath(page.getUrl().getId())}" method="post" class="text-center mb-4">
+            <button type="submit" class="btn btn-primary">Запустить проверку</button>
+        </form>
+
+        @if(page.getUrlChecks().isEmpty())
+            <div class="alert alert-info text-center">
+                <p>Проверок пока не было</p>
+            </div>
+        @else
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead class="thead-dark">
                     <tr>
-                        <td>ID</td>
-                        <td>Код ответа</td>
-                        <td>title</td>
-                        <td>h1</td>
-                        <td>description</td>
-                        <td>Дата проверки</td>
+                        <th>ID</th>
+                        <th>Код ответа</th>
+                        <th>Title</th>
+                        <th>H1</th>
+                        <th>Description</th>
+                        <th>Дата проверки</th>
                     </tr>
-        @for(var lastCheck : page.getUrlChecks())
-                    <tr>
-                        <td>${lastCheck.getId()}</td>
-                        <td>${lastCheck.getStatusCode()}</td>
-                        <td>${lastCheck.getTitle()}</td>
-                        <td>${lastCheck.getH1()}</td>
-                        <td>${lastCheck.getDescription()}</td>
-                        <td>${lastCheck.getCreatedAt().toString()}</td>
-                    </tr>
+                    </thead>
+                    <tbody>
+                    @for(var lastCheck : page.getUrlChecks())
+                        <tr>
+                            <td>${lastCheck.getId()}</td>
+                            <td>${lastCheck.getStatusCode()}</td>
+                            <td>${lastCheck.getTitle()}</td>
+                            <td>${lastCheck.getH1()}</td>
+                            <td>${lastCheck.getDescription()}</td>
+                            <td>${lastCheck.getCreatedAt().toString()}</td>
+                        </tr>
+                    @endfor
+                    </tbody>
                 </table>
             </div>
-        @endfor
-    @endif
+        @endif
+    </div>
 `
 )

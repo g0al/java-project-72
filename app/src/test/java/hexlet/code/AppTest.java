@@ -72,11 +72,8 @@ public class AppTest {
         Long id = urlEntity.getId();
 
         JavalinTest.test(app, (server, client) -> {
-
             var response = client.get("/urls");
-
             assertThat(response.code()).isEqualTo(200);
-
             String responseBody = response.body().string();
             assertThat(responseBody).contains(testUrl);
             assertThat(responseBody).contains("/urls/" + id);
@@ -141,27 +138,4 @@ public class AppTest {
                     .hasSize(1);
         });
     }
-
-//    @Test
-//    public void testTests() throws SQLException {
-//        JavalinTest.test(app, (server, client) -> {
-//            var url = "https://www.ok.ru";
-//            var requestBody = "url=" + url;
-//            assertThat(client.post("/urls", requestBody).code()).isEqualTo(200);
-//
-//            var actualUrl = UrlRepository.findByName(url);
-//            assertThat(actualUrl).isNotNull();
-//        });
-//    }
-//
-//    @Test
-//    void testIndexTest() {
-//        JavalinTest.test(app, (server, client) -> {
-//            var response = client.get("/urls");
-//            assertThat(response.code()).isEqualTo(200);
-//            assertThat(response.body().string())
-//                    .contains(existingUrl.get("name").toString())
-//                    .contains(existingUrlCheck.get("status_code").toString());
-//        });
-//    }
 }

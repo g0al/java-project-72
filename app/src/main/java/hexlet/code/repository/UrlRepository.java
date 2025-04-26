@@ -26,13 +26,10 @@ public class UrlRepository extends BaseRepository {
             if (generatedKeys.next()) {
                 url.setId(generatedKeys.getLong(1));
                 url.setCreatedAt(createdAt.toLocalDateTime());
-
-                //log.info("URL saved: {}", url.getName());
             } else {
                 throw new SQLException("DB did not return an ID after saving an entity");
             }
         } catch (SQLException e) {
-            //log.error("Error saving URL: {}", url.getName(), e);
             throw e;
         }
     }

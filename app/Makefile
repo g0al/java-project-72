@@ -1,33 +1,16 @@
-check-deps:
-	./gradlew dependencyUpdates -Drevision=release
-
-dev:
-	./gradlew run
-
-setup:
-	gradle wrapper --gradle-version 8.12
-
-clean:
-	./gradlew clean
+.PHONY: build test checkstyle run-dist report
 
 build:
-	./gradlew clean build
-
-start: dev
-
-install:
-	./gradlew installDist
-
-lint:
-	./gradlew checkstyleMain checkstyleTest
+	./gradlew build
 
 test:
 	./gradlew test
 
-image-build:
-	docker build -t hexletcomponents/java-javalin-example:latest .
+checkstyle:
+	./gradlew checkstyleMain checkstyleTest
 
-image-push:
-	docker push hexletcomponents/java-javalin-example:latest
+run-dist:
+	./build/install/app/bin/app
 
-.PHONY: build
+report:
+	./gradlew jacocoTestReport

@@ -7,40 +7,43 @@ content = @`
     @if(page != null && page.getFlash() != null)
         <p>${page.getFlash()}</p>
     @endif
-    <h1>Urls List</h1>
-    @if(page.getUrls().isEmpty())
-        <p>Url list is empty</p>
-    @else
-        <div>
-            <table class="table table-striped table-bordered table-hover">
-                <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>URL</th>
-                    <th>Creation date</th>
-                    <th>Last check</th>
-                    <th>Response code</th>
-                </tr>
-                </thead>
-                <tbody>
-                @for(var url : page.getUrls())
-                    <tr>
-                        <td>${url.getId()}</td>
-                        <td><a href="${NamedRoutes.urlPath(url.getId())}">${url.getName()}</a></td>
-                        <td>${url.getCreatedAt().toString()}</td>
+    <div class="container mt-5">
+        <h1 class="text-center">Список URL</h1>
 
-                        @if(page.getLastChecks().containsKey(url.getId()))
-                            <td>${page.getLastChecks().get(url.getId()).getCreatedAt().toString()}</td>
-                            <td>${page.getLastChecks().get(url.getId()).getStatusCode()}</td>
-                        @else
-                            <td>No data</td>
-                            <td>---</td>
-                        @endif
+        @if(page.getUrls().isEmpty())
+            <p class="text-center">Список URL пуст</p>
+        @else
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered table-hover">
+                    <thead class="thead-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>URL</th>
+                        <th>Дата создания</th>
+                        <th>Последняя проверка</th>
+                        <th>Код ответа</th>
                     </tr>
-                @endfor
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                    @for(var url : page.getUrls())
+                        <tr>
+                            <td>${url.getId()}</td>
+                            <td><a href="${NamedRoutes.urlPath(url.getId())}">${url.getName()}</a></td>
+                            <td>${url.getCreatedAt().toString()}</td>
+
+                            @if(page.getLastChecks().containsKey(url.getId()))
+                                <td>${page.getLastChecks().get(url.getId()).getCreatedAt().toString()}</td>
+                                <td>${page.getLastChecks().get(url.getId()).getStatusCode()}</td>
+                            @else
+                                <td>No data</td>
+                                <td>---</td>
+                            @endif
+                        </tr>
+                    @endfor
+                    </tbody>
+                </table>
             </div>
-    @endif
+        @endif
+    </div>
 `
 )
