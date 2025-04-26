@@ -30,7 +30,6 @@ public class UrlCheckRepository extends BaseRepository {
             var generatedKeys = preparedStatement.getGeneratedKeys();
             if (generatedKeys.next()) {
                 check.setId(generatedKeys.getLong(1));
-                //log.info("Check saved: {} {}", check.getTitle(), check.getH1());
             } else {
                 throw new SQLException("DB did not return an ID after saving an entity");
             }

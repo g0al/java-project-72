@@ -121,37 +121,5 @@ public class UrlsController {
         }
 
         ctx.redirect("/urls", HttpStatus.forStatus(302));
-    };
-
-//    public static void create(Context ctx) throws SQLException {
-//        try {
-//            var name = ctx.formParam("name");
-//            String finalName;
-//            URI uri = new URI(name);
-//            URL urlFromUri = uri.toURL();
-//            var protocol = urlFromUri.getProtocol();
-//            var host = urlFromUri.getHost();
-//            var port = urlFromUri.getPort();
-//            name = protocol + "://" + host;
-//            if (port != -1) {
-//                finalName = name + ":" + port;
-//            } else {
-//                finalName = name;
-//            }
-//
-//            var url = new Url(finalName);
-//
-//            if (UrlRepository.findByName(name).isEmpty()) {
-//                UrlRepository.save(url);
-//                ctx.sessionAttribute("flash", "Страница успешно добавлена");
-//                ctx.redirect(NamedRoutes.urlsPath());
-//            } else {
-//                ctx.sessionAttribute("flash", "Страница уже существует");
-//                ctx.redirect(NamedRoutes.urlsPath());
-//            }
-//        } catch (Exception e) {
-//            ctx.sessionAttribute("flash", "Ошибка при вводе адреса");
-//            ctx.redirect(NamedRoutes.indexPath());
-//        }
-//    }
+    }
 }
