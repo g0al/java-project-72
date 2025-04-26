@@ -1,3 +1,7 @@
+# Pages Analyzer
+
+This is a small learning project. You can use it to analyze web pages.
+
 ### Hexlet tests and linter status:
 [![Actions Status](https://github.com/g0al/java-project-72/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/g0al/java-project-72/actions)
 
@@ -10,4 +14,40 @@
 ### Java CI:
 [![Java CI](https://github.com/g0al/java-project-72/actions/workflows/gradle.yml/badge.svg)](https://github.com/g0al/java-project-72/actions/workflows/gradle.yml)
 
-# Pages Analyzer
+You can use next commands to manage the programm.
+
+## Start
+
+```bash
+make
+```
+
+## Setup
+
+```bash
+make build
+```
+
+## Run
+
+```bash
+make start
+```
+
+## Run tests
+
+```bash
+make test
+```
+
+## Run checkstyle
+
+```bash
+make lint
+```
+
+## Check update dependencies and plugins
+
+```bash
+make update
+```
