@@ -66,18 +66,6 @@ public class UrlRepository extends BaseRepository {
         return Optional.empty();
     }
 
-    public static boolean existsByName(String name) throws SQLException {
-        var sql = "SELECT 1 FROM urls WHERE name = ? LIMIT 1";
-        try (var conn = dataSource.getConnection();
-             var preparedStatement = conn.prepareStatement(sql)) {
-
-            preparedStatement.setString(1, name);
-            try (var resultSet = preparedStatement.executeQuery()) {
-                return resultSet.next();
-            }
-        }
-    }
-
     public static List<Url> getEntities() throws SQLException {
         var sql = "SELECT id, name, created_at FROM urls";
         List<Url> urls = new ArrayList<>();
