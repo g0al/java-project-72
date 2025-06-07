@@ -34,7 +34,7 @@ jobs:
       - name: Run Make Report
         working-directory: app
         run: make report
-        
+
       - uses: qltysh/qlty-action/coverage@v1
         with:
           token: {{secrets.QLTY_COVERAGE_TOKEN}}
