@@ -26,4 +26,4 @@ jobs:
       - uses: qltysh/qlty-action/coverage@v1
         with:
           token: ${{ secrets.QLTY_COVERAGE_TOKEN }}  # Corrected syntax
-          coverage-path: ${{github.workspace}}/app/build/reports/jacoco/test/jacocoTestReport.xml
+          files: ${{github.workspace}}/app/build/reports/jacoco/test/jacocoTestReport.xml
