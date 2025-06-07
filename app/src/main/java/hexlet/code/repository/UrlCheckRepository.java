@@ -1,5 +1,6 @@
 package hexlet.code.repository;
 
+import com.zaxxer.hikari.HikariDataSource;
 import hexlet.code.model.UrlCheck;
 
 import java.sql.SQLException;
@@ -12,6 +13,10 @@ import java.util.List;
 import java.util.Map;
 
 public class UrlCheckRepository extends BaseRepository {
+
+    public UrlCheckRepository(HikariDataSource dataSource) {
+        super(dataSource);
+    }
 
     public static void save(UrlCheck check) throws SQLException {
         var sql = "INSERT INTO url_checks (url_id, status_code, title, h1, description, created_at) "

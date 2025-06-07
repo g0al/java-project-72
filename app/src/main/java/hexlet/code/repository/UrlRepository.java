@@ -1,5 +1,6 @@
 package hexlet.code.repository;
 
+import com.zaxxer.hikari.HikariDataSource;
 import hexlet.code.model.Url;
 
 import java.sql.ResultSet;
@@ -12,6 +13,10 @@ import java.util.List;
 import java.util.Optional;
 
 public class UrlRepository extends BaseRepository {
+
+    public UrlRepository(HikariDataSource dataSource) {
+        super(dataSource);
+    }
 
     public static void save(Url url) throws SQLException {
         var sql = "INSERT INTO urls (name, created_at) VALUES (?, ?)";

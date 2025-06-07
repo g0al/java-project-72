@@ -64,9 +64,8 @@ public class UrlsController {
     }
 
     public static void index(Context ctx) throws SQLException {
-        List<Url> urls;
         Map<Long, UrlCheck> urlChecks;
-        urls = UrlRepository.getEntities();
+        List<Url> urls = UrlRepository.getEntities();
         urlChecks = UrlCheckRepository.getLastChecks();
         var page = new UrlsPage(urls, urlChecks);
         page.setFlash(ctx.consumeSessionAttribute("flash"));
@@ -76,7 +75,8 @@ public class UrlsController {
     public static void show(Context ctx) throws SQLException {
         var id = ctx.pathParamAsClass("id", Long.class).get();
         var url = UrlRepository.findById(id)
-                .orElseThrow(() -> new NotFoundResponse("Url with id = " + id + " not found"));
+                .orElseThrow(() -> new NotFoundResponse(
+                        String.format("Url with id = %d not found", id)));
         List<UrlCheck> urlChecks = List.of();
         if (!UrlCheckRepository.getChecksForUrl(id).isEmpty()) {
             urlChecks = UrlCheckRepository.getChecksForUrl(id);
