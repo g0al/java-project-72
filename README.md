@@ -14,7 +14,7 @@ This is a small learning project. You can use it to analyze web pages.
 ### Java CI:
 [![Java CI](https://github.com/g0al/java-project-72/actions/workflows/gradle.yml/badge.svg)](https://github.com/g0al/java-project-72/actions/workflows/gradle.yml)
 
-You can use next commands to manage the programm.
+You can use next commands to manage the programm:
 
 ## Start
 
