@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.sql.Driver;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.stream.Collectors;
 
@@ -63,9 +65,29 @@ public class App {
         app.start(getPort());
     }
 
+    private static String getDriverName() {
+        Driver driver;
+        try {
+            driver = DriverManager.getDriver(getDatabaseUrl());
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return driver.getClass().getName();
+    }
+
     public static Javalin getApp() throws IOException, SQLException {
         var hikariConfig = new HikariConfig();
-        hikariConfig.setJdbcUrl(getDatabaseUrl());
+
+        var dbDriver = getDriverName();
+        if (dbDriver.equals("org.postgresql.Driver")) {
+            hikariConfig.setJdbcUrl(getDatabaseUrl());
+            hikariConfig.setUsername(System.getenv().getOrDefault(
+                    "DB_USERNAME", "postgres"));
+            hikariConfig.setPassword(System.getenv().getOrDefault(
+                    "DB_PASSWORD", "postgres"));
+        } else if (dbDriver.equals("org.h2.Driver")) {
+            hikariConfig.setJdbcUrl(getDatabaseUrl());
+        }
 
         var dataSource = new HikariDataSource(hikariConfig);
         String sql = readResourceFile("schema.sql");
@@ -74,7 +96,6 @@ public class App {
              var statement = connection.createStatement()) {
             statement.execute(sql);
         }
-        //BaseRepository.dataSource = dataSource;
         BaseRepository.setDataSource(dataSource);
 
         var app = Javalin.create(config -> {
